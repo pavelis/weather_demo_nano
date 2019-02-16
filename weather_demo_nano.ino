@@ -1,5 +1,3 @@
-// using Sparkfun BMP180 library https://github.com/sparkfun/BMP180_Breakout_Arduino_Library
-//#include <SFE_BMP180.h>
 // using BMP085/180 library from Filipe Vieira
 #include <BMP085.h>
 // using Adafruit DHT library https://github.com/adafruit/Adafruit_Sensor
@@ -14,7 +12,6 @@
 #define ALT 76000 // altitude is 760 meters
 
 DHT dht (DHTPIN, DHTTYPE);
-//SFE_BMP180 bmp;
 BMP085 bmp;
 LiquidCrystal_I2C lcd(0x27, 20, 4);  // Set the LCD I2C address
 
@@ -41,18 +38,7 @@ void setup() {
     lcd.print("DHT failure");
     return;
   }
-//  bmp.init(MODE_ULTRA_HIGHRES, ALT, true);
   bmp.init();
-/*  
-  if (bmp.begin())
-    Serial.println("BMP180 init success");
-  else {
-    Serial.println("BMP180 init fail");
-    lcd.clear();
-    lcd.print("BMP180 init fail");
-    while(1);
-  }
-*/
 }            
 
 void loop() { 
@@ -64,28 +50,7 @@ void loop() {
 
   bmp.getPressure(&pres);
   bmp.getTemperature(&tempbmp);
-/*  
-  status = bmp.startTemperature();
-  if (status != 0) {
-    delay(status);
-    status = bmp.getTemperature(tempbmpraw);
-    if (status != 0) {
-      Serial.print("Temperature: ");
-      Serial.print(tempbmpraw, 2);
-      Serial.println(" *C");
-      status = bmp.startPressure(3);
-      if (status != 0) {
-        delay(status);
-        status = bmp.getPressure(presraw, tempbmpraw);
-        if (status != 0) {
-          Serial.print("Pressure: ");
-          Serial.print(presraw, 2);
-          Serial.println(" hPa");
-        }
-      }
-    }
-  }
-*/  
+
   tempdhtavg += tempdht;
   humavg += hum;
   tempbmpavg += tempbmp / 10;
