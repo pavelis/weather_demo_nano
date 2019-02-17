@@ -21,6 +21,7 @@
 #define DELAY 2000 // interval between measurements in ms
 
 #define PHOTOPIN 0 // pin light resistor is connected to
+#define BACKLIGHTPIN 3 // pin for backlight control
 
 DHT dht (DHTPIN, DHTTYPE);
 Adafruit_BMP085 bmp;
@@ -31,17 +32,18 @@ float hum, tempdht;
 float tempdhtavg, humavg;
 float tempbmp, pres;
 float tempbmpavg, presavg;
-int light;
+word light;
 
 void setup() {
+  pinMode(BACKLIGHTPIN, OUTPUT);
   light = analogRead(PHOTOPIN);
+  backlightControl(BACKLIGHTPIN, light);
   Serial.begin(9600);
   Wire.begin();
   lcd.init();
+  delay(1000);
   lcd.backlight();
   lcd.setCursor(0, 0);
-  lcd.print("... ");
-  delay(1000);
   dht.begin();
   tempdht = dht.readTemperature();
   hum = dht.readHumidity();
@@ -57,7 +59,7 @@ void setup() {
   }
   pres = bmp.readPressure();
   tempbmp = bmp.readTemperature();
-  Serial.println("Seconds;TempDHT *C;TempBMP *C;Humidity %;Pressure hPa;Light");
+  Serial.println("Seconds;TempDHT *C;TempBMP *C;Humidity %;Pressure hPa;Light(0-1023)");
   lcd.clear();
   show(tempdht, hum, pres, tempbmp, light);
 }            
@@ -65,6 +67,7 @@ void setup() {
 void loop() { 
 
   light = analogRead(PHOTOPIN);
+  backlightControl(BACKLIGHTPIN, light);
   delay(DELAY);
   counter++;
   tempdht = dht.readTemperature();
@@ -95,7 +98,7 @@ void loop() {
 
 }
 
-void show(float tempdht, float hum, float pres, float tempbmp, int light) {
+void show(float tempdht, float hum, float pres, float tempbmp, word light) {
     pres /= 100;
     Serial.print(millis()/1000);
     Serial.print(";");
@@ -114,10 +117,14 @@ void show(float tempdht, float hum, float pres, float tempbmp, int light) {
     lcd.print(tempdht, 1);
     lcd.print((char)223);
     lcd.print("C  ");
+    lcd.setCursor(14, 0);
+    lcd.print("* ");
+    lcd.print(light);
+    lcd.print(" ");
     lcd.setCursor(0, 1);
     lcd.print("Hum: ");
     lcd.print(round(hum), 1);
-    lcd.print("%");
+    lcd.print("% ");
     lcd.setCursor(0, 2);
     lcd.print("Pressure: ");
     lcd.print(pres, 1);
@@ -127,4 +134,11 @@ void show(float tempdht, float hum, float pres, float tempbmp, int light) {
     lcd.print(tempbmp, 1);
     lcd.print((char)223);
     lcd.print("C  ");
+}
+
+void backlightControl(byte pin, word light) {
+  // values for 10 kOhm voltage divider resistance
+  light = constrain(light, 50, 900);
+  int level = map(light, 50, 900, 5, 700);
+  analogWrite(pin, level);
 }
