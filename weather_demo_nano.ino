@@ -1,7 +1,7 @@
 /*
  * A portable weather station demo prototype.
- * Using Arduino Nano, DHT22, BMP180, LCD 20x4 display with YwRobot LCM1602.
- *
+ * Using Arduino Nano, DHT22, BMP180, LCD 20x4 display with YwRobot LCM1602,
+ * light resistor
  *
  *
 */
@@ -20,6 +20,8 @@
 #define AVGNUM 1 // number of measurements to average
 #define DELAY 2000 // interval between measurements in ms
 
+#define PHOTOPIN 0 // pin light resistor is connected to
+
 DHT dht (DHTPIN, DHTTYPE);
 Adafruit_BMP085 bmp;
 LiquidCrystal_I2C lcd(0x27, 20, 4);  // Set the LCD I2C address
@@ -29,8 +31,10 @@ float hum, tempdht;
 float tempdhtavg, humavg;
 float tempbmp, pres;
 float tempbmpavg, presavg;
+int light;
 
 void setup() {
+  light = analogRead(PHOTOPIN);
   Serial.begin(9600);
   Wire.begin();
   lcd.init();
@@ -53,12 +57,14 @@ void setup() {
   }
   pres = bmp.readPressure();
   tempbmp = bmp.readTemperature();
-    lcd.clear();
-  show(tempdht, hum, pres, tempbmp);
+  Serial.println("Seconds;TempDHT *C;TempBMP *C;Humidity %;Pressure hPa;Light");
+  lcd.clear();
+  show(tempdht, hum, pres, tempbmp, light);
 }            
 
 void loop() { 
 
+  light = analogRead(PHOTOPIN);
   delay(DELAY);
   counter++;
   tempdht = dht.readTemperature();
@@ -78,7 +84,7 @@ void loop() {
     tempbmpavg /= AVGNUM;
     presavg /= AVGNUM;
 
-    show(tempdhtavg, humavg, presavg, tempbmpavg);
+    show(tempdhtavg, humavg, presavg, tempbmpavg, light);
     
     tempdhtavg = 0;
     humavg = 0;
@@ -89,20 +95,20 @@ void loop() {
 
 }
 
-void show(float tempdht, float hum, float pres, float tempbmp) {
+void show(float tempdht, float hum, float pres, float tempbmp, int light) {
     pres /= 100;
-    Serial.print("TempDHT: ");
+    Serial.print(millis()/1000);
+    Serial.print(";");
     Serial.print(tempdht);
-    Serial.print((char)223);
-    Serial.print("C; ");
-    Serial.print("TempBMP: ");
+    Serial.print(";");
     Serial.print(tempbmp);
-    Serial.print("; Hum: ");
+    Serial.print(";");
     Serial.print(hum);
-    Serial.print("%. ");
-    Serial.print("Pressure: ");
+    Serial.print(";");
     Serial.print(pres);
-    Serial.println(" hPa.");
+    Serial.print(";");
+    Serial.print(light);
+    Serial.println("");
     lcd.setCursor(0, 0);
     lcd.print("Temp: ");
     lcd.print(tempdht, 1);
