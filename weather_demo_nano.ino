@@ -137,8 +137,8 @@ void show(float tempdht, float hum, float pres, float tempbmp, word light) {
 }
 
 void backlightControl(byte pin, word light) {
-  // values for 10 kOhm voltage divider resistance
-  light = constrain(light, 50, 900);
-  int level = map(light, 50, 900, 5, 700);
+  // values for 10 kOhm voltage divider resistor and 100 Ohm output resistor
+  light = constrain(light, 40, 900);
+  int level = map(light, 40, 900, 4, 255);
   analogWrite(pin, level);
 }
