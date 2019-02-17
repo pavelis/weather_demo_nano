@@ -1,15 +1,24 @@
-// using Adafruit BMP085 library https://github.com/adafruit/Adafruit-BMP085-Library
+/*
+ * A portable weather station demo prototype.
+ * Using Arduino Nano, DHT22, BMP180, LCD 20x4 display with YwRobot LCM1602.
+ *
+ *
+ *
+*/
+// Adafruit BMP085 library https://github.com/adafruit/Adafruit-BMP085-Library
 #include <Adafruit_BMP085.h>
-// using Adafruit DHT library https://github.com/adafruit/Adafruit_Sensor
+// Adafruit DHT library https://github.com/adafruit/Adafruit_Sensor
 #include <DHT.h>
+// standard Arduino Wire.h library
 #include <Wire.h>
-// using LiquidCrystal_I2C library from https://github.com/marcoschwartz/LiquidCrystal_I2C
+// LiquidCrystal_I2C library from https://github.com/marcoschwartz/LiquidCrystal_I2C
 #include <LiquidCrystal_I2C.h>
 
-#define DHTPIN 7     // what pin we're connected to
-#define DHTTYPE DHT22   // DHT 22  (AM2302)
-#define AVGNUM 5 // number of measurements in average value
-#define ALT 76000 // altitude is 760 meters
+#define DHTPIN 7 // pin DHT22 is connected to
+#define DHTTYPE DHT22 // type of sensor is DHT 22  (AM2302)
+
+#define AVGNUM 1 // number of measurements to average
+#define DELAY 2000 // interval between measurements in ms
 
 DHT dht (DHTPIN, DHTTYPE);
 Adafruit_BMP085 bmp;
@@ -18,7 +27,7 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);  // Set the LCD I2C address
 byte counter;
 float hum, tempdht;
 float tempdhtavg, humavg;
-long tempbmp, pres;
+float tempbmp, pres;
 float tempbmpavg, presavg;
 
 void setup() {
@@ -27,7 +36,7 @@ void setup() {
   lcd.init();
   lcd.backlight();
   lcd.setCursor(0, 0);
-  lcd.print("Weather Demo Nano 16 Feb 2019. ");
+  lcd.print("... ");
   delay(1000);
   dht.begin();
   tempdht = dht.readTemperature();
@@ -35,21 +44,22 @@ void setup() {
   if (isnan(tempdht) || isnan(hum)) {
     Serial.println("DHT failure!");
     lcd.print("DHT failure.");
-    return;
+    while(1);
   }
   if (!bmp.begin()) {
     Serial.println("BMP failure!");
     lcd.print("BMP failure.");
-    return;
+    while(1);
   }
-  pres = bmp.readPressure() / 100;
+  pres = bmp.readPressure();
   tempbmp = bmp.readTemperature();
+    lcd.clear();
   show(tempdht, hum, pres, tempbmp);
 }            
 
 void loop() { 
 
-  delay(2000);
+  delay(DELAY);
   counter++;
   tempdht = dht.readTemperature();
   hum = dht.readHumidity();
@@ -60,7 +70,7 @@ void loop() {
   tempdhtavg += tempdht;
   humavg += hum;
   tempbmpavg += tempbmp;
-  presavg += pres / 100;
+  presavg += pres;
 
   if (counter == AVGNUM) {
     tempdhtavg /= AVGNUM;
@@ -80,6 +90,7 @@ void loop() {
 }
 
 void show(float tempdht, float hum, float pres, float tempbmp) {
+    pres /= 100;
     Serial.print("TempDHT: ");
     Serial.print(tempdht);
     Serial.print((char)223);
@@ -92,14 +103,14 @@ void show(float tempdht, float hum, float pres, float tempbmp) {
     Serial.print("Pressure: ");
     Serial.print(pres);
     Serial.println(" hPa.");
-    lcd.clear();
+    lcd.setCursor(0, 0);
     lcd.print("Temp: ");
     lcd.print(tempdht, 1);
     lcd.print((char)223);
-    lcd.print("C");
+    lcd.print("C  ");
     lcd.setCursor(0, 1);
     lcd.print("Hum: ");
-    lcd.print(hum, 1);
+    lcd.print(round(hum), 1);
     lcd.print("%");
     lcd.setCursor(0, 2);
     lcd.print("Pressure: ");
@@ -109,5 +120,5 @@ void show(float tempdht, float hum, float pres, float tempbmp) {
     lcd.print("Temp (BMP): ");
     lcd.print(tempbmp, 1);
     lcd.print((char)223);
-    lcd.print("C");
+    lcd.print("C  ");
 }
