@@ -13,8 +13,8 @@
 #include <Wire.h>
 // LiquidCrystal_I2C library from https://github.com/marcoschwartz/LiquidCrystal_I2C
 #include <LiquidCrystal_I2C.h>
-// SDS011 library https://github.com/lewapek/sds-dust-sensors-arduino-library
-//#include "SdsDustSensor.h"
+// SDS011 library https://github.com/ricki-z/SDS011
+#include <SDS011.h>
 
 #define DHTPIN 7 // pin DHT22 is connected to
 #define DHTTYPE DHT22 // type of sensor is DHT 22  (AM2302)
@@ -25,13 +25,13 @@
 #define PHOTOPIN 0 // pin light resistor is connected to
 #define BACKLIGHTPIN 3 // pin for backlight control
 
-#define RXPIN 12 // RX pin connected to sensor's TX
-#define TXPIN 11 // TX pin connected to sensor's RX
+#define RXPIN 12 // RX pin connected to SDS011's TX
+#define TXPIN 11 // TX pin connected to SDS011's RX
 
 DHT dht (DHTPIN, DHTTYPE);
 Adafruit_BMP085 bmp;
 LiquidCrystal_I2C lcd(0x27, 20, 4);  // Set the LCD I2C address
-//SdsDustSensor sds(RXPIN, TXPIN);
+SDS011 sds;
 
 
 byte counter;
@@ -49,9 +49,10 @@ void setup() {
   Serial.begin(9600);
   Wire.begin();
   lcd.init();
-//  sds.begin();
+  sds.begin(RXPIN, TXPIN);
   delay(200);
   lcd.backlight();
+  lcd.clear();
   lcd.setCursor(0, 0);
   dht.begin();
   tempdht = dht.readTemperature();
@@ -68,15 +69,13 @@ void setup() {
   }
   pres = bmp.readPressure();
   tempbmp = bmp.readTemperature();
-//  sds.setActiveReportingMode(); // ensures sensor is in 'active' reporting mode
-//  sds.setCustomWorkingPeriod(1); // sensor sends data every 1 minute
   Serial.println("Seconds;TempDHT *C;TempBMP *C;Humidity %;Pressure hPa;PM2.5;PM10;Light(0-1023)");
   
-  lcd.clear();
   show(tempdht, hum, pres, tempbmp, light, 0, 0);
 }            
 
 void loop() { 
+  float pm25val, pm10val;
 
   light = analogRead(PHOTOPIN);
   backlightControl(BACKLIGHTPIN, light);
@@ -88,6 +87,11 @@ void loop() {
   pres = bmp.readPressure();
   tempbmp = bmp.readTemperature();
 
+  if (!sds.read(&pm25val, &pm10val)) {
+    pm25 = int(pm25val);
+    pm10 = int(pm10val);
+  }
+  
   tempdhtavg += tempdht;
   humavg += hum;
   tempbmpavg += tempbmp;
@@ -148,11 +152,12 @@ void show(float tempdht, float hum, float pres, float tempbmp, word light, int p
     lcd.print(pres, 1);
     lcd.print(" hPa");
     lcd.setCursor(0, 3);
-    lcd.print("PM 2.5:");
+    lcd.print("PM2.5: ");
     lcd.print(pm25);
-    lcd.print(" ");
-    lcd.print("10:");
+    lcd.print(", ");
+    lcd.print("10: ");
     lcd.print(pm10);
+    lcd.print("   ");
 }
 
 void backlightControl(byte pin, word light) {
