@@ -154,7 +154,7 @@ void show(float tempdht, float hum, float pres, float tempbmp, word light, int p
     lcd.setCursor(0, 3);
     lcd.print("PM2.5: ");
     lcd.print(pm25);
-    lcd.print(", ");
+    lcd.print("; ");
     lcd.print("10: ");
     lcd.print(pm10);
     lcd.print("   ");
